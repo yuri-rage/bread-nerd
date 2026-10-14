@@ -1,5 +1,5 @@
 // Bread Nerd Service Worker — Complete Offline Kitchen Baking Capability
-const CACHE_NAME = 'bread-nerd-v2';
+const CACHE_NAME = 'bread-nerd-v0.1.1';
 const ASSETS_TO_CACHE = [
   './',
   './styles.css',

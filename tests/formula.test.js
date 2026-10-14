@@ -342,4 +342,25 @@ test('buildSteps includes loaf #2 proofing note for Dutch oven and multi-sheet n
   assert.ok(step4S.printDesc.includes('two sheets') || step4S.printDesc.includes('batches'), 'Step 4 print for 3 loaves should mention two sheets or batches');
 });
 
+// 11. Version Consistency Check across package.json, index.html, and sw.js
+test('release version matches across package.json, index.html header badge, and sw.js cache name', () => {
+  const fs = require('fs');
+  const path = require('path');
+
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+  const expectedVer = pkg.version;
+
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  assert.ok(
+    html.includes(`v${expectedVer}`),
+    `index.html header badge must include v${expectedVer} matching package.json`
+  );
+
+  const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
+  assert.ok(
+    sw.includes(`bread-nerd-v${expectedVer}`),
+    `sw.js CACHE_NAME must include bread-nerd-v${expectedVer} matching package.json`
+  );
+});
+
 console.log(`\n🎉 All ${passed} formula tests passed successfully!\n`);

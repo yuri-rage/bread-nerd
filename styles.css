@@ -956,6 +956,10 @@ body {
   border-radius: 999px;
 }
 
+.badge-tag .badge-version {
+  text-transform: lowercase;
+}
+
 .brand-subtitle {
   font-size: 0.82rem;
   color: var(--text-secondary);

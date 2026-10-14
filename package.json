@@ -1,6 +1,6 @@
 {
   "name": "bread-nerd",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "Interactive Bread Hydration & Baker's Calculator",
   "private": true,
   "scripts": {

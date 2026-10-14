@@ -1,8 +1,7 @@
 // Bread Nerd Service Worker — Complete Offline Kitchen Baking Capability
-const CACHE_NAME = 'bread-nerd-v1';
+const CACHE_NAME = 'bread-nerd-v2';
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
   './styles.css',
   './app.js',
   './assets/favicon.svg',
@@ -59,9 +58,9 @@ self.addEventListener('fetch', (event) => {
         });
         return networkResponse;
       }).catch(() => {
-        // Offline fallback to root index.html for navigation
+        // Offline fallback to root ./ for navigation
         if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
+          return caches.match('./');
         }
       });
     })

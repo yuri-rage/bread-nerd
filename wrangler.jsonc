@@ -1,4 +1,5 @@
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "bread-nerd",
   "compatibility_date": "2026-10-14",
   "assets": {

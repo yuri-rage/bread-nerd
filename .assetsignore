@@ -2,9 +2,11 @@
 .github
 .gitignore
 .assetsignore
+.wrangler
 wrangler.jsonc
 tests
 node_modules
 package.json
+package-lock.json
 README.md
 LICENSE

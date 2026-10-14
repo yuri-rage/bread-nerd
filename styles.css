@@ -3356,7 +3356,9 @@ body.recipe-mode .content-grid {
 
   /* Hide the web interactive UI entirely */
   .app-layout,
-  #toastContainer {
+  #toastContainer,
+  .mobile-floating-timer,
+  #timerAriaAnnouncer {
     display: none !important;
     visibility: hidden !important;
   }

@@ -22,3 +22,5 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Run formula tests
       run: npm test
+    - name: Run undefined variable check
+      run: npm run check:undef

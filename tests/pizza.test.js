@@ -580,13 +580,15 @@ test('Item 4: Outdoor oven preheat temperature and bake time adapt to sugar leve
 });
 
 // 25. Undefined Variable Safety Guard
-test('Pizza timer button handlers do not reference obsolete/undefined variables (e.g. timerIsRunning)', () => {
+test('Pizza timer and wake lock handlers do not reference obsolete/undefined variables (e.g. timerIsRunning, wakeLockWanted)', () => {
   const fs = require('fs');
   const path = require('path');
   const code = fs.readFileSync(path.join(__dirname, '../pizza/app.js'), 'utf8');
   assert.ok(!code.includes('timerIsRunning'), 'pizza/app.js must not reference obsolete timerIsRunning');
   assert.ok(!code.includes('timerRemainingSeconds'), 'pizza/app.js must not reference obsolete timerRemainingSeconds');
   assert.ok(!code.includes('timerTotalSeconds'), 'pizza/app.js must not reference obsolete timerTotalSeconds');
+  assert.ok(!code.includes('wakeLockWanted'), 'pizza/app.js must not reference obsolete wakeLockWanted');
+  assert.ok(!code.includes('wakeLockSentinel'), 'pizza/app.js must not reference obsolete wakeLockSentinel');
 });
 
 // 26. Kitchen Timer User Workflow (Load, Pause, Resume, Clear)

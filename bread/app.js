@@ -2248,13 +2248,6 @@
     window.addEventListener('beforeprint', () => {
       renderPrintRecipeCard();
     });
-
-    // Handle visibility change for screen wake lock re-acquisition
-    document.addEventListener('visibilitychange', async () => {
-      if (wakeLockWanted && document.visibilityState === 'visible') {
-        await requestWakeLock();
-      }
-    });
   }
 
   // Keep CSS --header-height synchronized with actual header rendered height

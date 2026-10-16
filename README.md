@@ -72,7 +72,7 @@ python3 -m http.server 8080 --directory dist
 A pure Node.js test suite with zero external dependencies verifies both applications and the shared kitchen engine:
 
 ```bash
-npm test            # Runs CSS selector validation and all 43 tests: Shared (5), Bread (12), Pizza (26)
+npm test            # Runs CSS selector validation and all 44 tests: Shared (5), Bread (13), Pizza (26)
 npm run check:selectors # Validates CSS class coverage across base.css and app stylesheets
 npm run check:undef     # Runs ESLint undefined variable checks across app scripts
 npm run test:shared # Runs shared kitchen core tests (timers, theme, toasts, wakelock)
@@ -134,7 +134,7 @@ bread-nerd/
 │   └── sw.js                   # Canonical service worker template with build-time interpolation
 ├── tests/
 │   ├── shared.test.js          # 5 Shared timer, theme & kitchen core tests
-│   ├── bread.test.js           # 12 Bread formula, timer workflow, step & version tests
+│   ├── bread.test.js           # 13 Bread formula, timer workflow, step & version tests
 │   └── pizza.test.js           # 26 Pizza formula, timer workflow, surface, timing & topping tests
 ├── scripts/
 │   ├── build.js                # Assembly into dist/<app> & dynamic sw.js compiler
@@ -142,6 +142,7 @@ bread-nerd/
 │   └── check-selectors.js      # CSS selector validation across HTML, JS, and CSS
 ├── .github/workflows/
 │   └── test.yml                # CI matrix running npm test on Node 20, 22, 24
+├── eslint.config.js            # Flat ESLint config for no-undef linting with browser globals
 ├── package.json                # Unified workspace scripts & versioning
 └── README.md
 ```

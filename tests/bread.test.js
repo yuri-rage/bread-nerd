@@ -413,4 +413,13 @@ test('Bread timer user workflow: load, toggle (paused), toggle (running), finish
   assert.strictEqual(timerEngine.getState().isRunning, false);
 });
 
+// 13. Undefined Variable Safety Guard
+test('Bread wake lock helpers do not reference obsolete/undefined variables (e.g. wakeLockWanted, wakeLockSentinel)', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const code = fs.readFileSync(path.join(__dirname, '../bread/app.js'), 'utf8');
+  assert.ok(!code.includes('wakeLockWanted'), 'bread/app.js must not reference obsolete wakeLockWanted');
+  assert.ok(!code.includes('wakeLockSentinel'), 'bread/app.js must not reference obsolete wakeLockSentinel');
+});
+
 console.log(`\n🎉 All ${passed} formula tests passed successfully!\n`);

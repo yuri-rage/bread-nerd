@@ -2454,14 +2454,7 @@
 
     // Wake lock button
     if (DOM.wakeLockBtn) {
-      DOM.wakeLockBtn.addEventListener('click', async () => {
-        wakeLockWanted = !wakeLockSentinel;
-        if (wakeLockWanted) {
-          await requestWakeLock();
-        } else {
-          releaseWakeLock();
-        }
-      });
+      DOM.wakeLockBtn.addEventListener('click', toggleWakeLock);
     }
 
     // Temperature unit button
@@ -2499,13 +2492,6 @@
         window.print();
       });
     }
-
-    // Wake Lock re-request on page visibility change
-    document.addEventListener('visibilitychange', async () => {
-      if (wakeLockWanted && document.visibilityState === 'visible' && !wakeLockSentinel) {
-        await requestWakeLock();
-      }
-    });
   }
 
   // Keep CSS --header-height synchronized with actual header rendered height

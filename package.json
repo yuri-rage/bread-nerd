@@ -1,12 +1,12 @@
 {
   "name": "bread-nerd",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Interactive Bread Hydration & Baker's Calculator",
   "private": true,
   "scripts": {
     "test": "node scripts/check-selectors.js && node tests/shared.test.js && node tests/bread.test.js && node tests/pizza.test.js",
     "check:selectors": "node scripts/check-selectors.js",
-    "check:undef": "npx eslint --no-config-lookup --rule '{\"no-undef\":\"error\"}' --env browser --global KitchenCore,module,require,process bread/app.js pizza/app.js shared/core.js",
+    "check:undef": "npx eslint@9 bread/app.js pizza/app.js shared/core.js",
     "test:shared": "node tests/shared.test.js",
     "test:bread": "node tests/bread.test.js",
     "test:pizza": "node tests/pizza.test.js",

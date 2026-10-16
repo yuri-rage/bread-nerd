@@ -9,7 +9,7 @@ const {
   SALT_DEFINITIONS,
   LEAVENING_DEFINITIONS,
   KAB_DEFAULTS
-} = require('../app.js');
+} = require('../bread/app.js');
 
 console.log('🧪 Running Bread Nerd Formula Tests...\n');
 
@@ -346,20 +346,34 @@ test('buildSteps includes loaf #2 proofing note for Dutch oven and multi-sheet n
 test('release version matches across package.json, index.html header badge, and sw.js cache name', () => {
   const fs = require('fs');
   const path = require('path');
+  const { buildApp } = require('../scripts/build.js');
 
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
   const expectedVer = pkg.version;
 
-  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '../bread/index.html'), 'utf8');
   assert.ok(
     html.includes(`v${expectedVer}`),
-    `index.html header badge must include v${expectedVer} matching package.json`
+    `bread/index.html header badge must include v${expectedVer} matching package.json`
   );
 
-  const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
+  buildApp('bread');
+  const sw = fs.readFileSync(path.join(__dirname, '../dist/bread/sw.js'), 'utf8');
   assert.ok(
     sw.includes(`bread-nerd-v${expectedVer}`),
-    `sw.js CACHE_NAME must include bread-nerd-v${expectedVer} matching package.json`
+    `dist/bread/sw.js CACHE_NAME must include bread-nerd-v${expectedVer} matching package.json`
+  );
+  assert.ok(
+    sw.includes("key.startsWith(`${APP_NAME}-`)"),
+    'dist/bread/sw.js must isolate cache deletion with APP_NAME prefix'
+  );
+  assert.ok(
+    !sw.includes('"./index.html"') && !sw.includes("'./index.html'"),
+    'dist/bread/sw.js must not list index.html in ASSETS_TO_CACHE (covered by ./)'
+  );
+  assert.ok(
+    sw.includes("event.request.mode === 'navigate'") && sw.includes("caches.match('./')"),
+    'dist/bread/sw.js must restore offline navigation fallback to ./'
   );
 });
 

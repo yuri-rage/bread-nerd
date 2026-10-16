@@ -32,6 +32,7 @@
       } catch (e) {}
     })();
   </script>
+  <link rel="stylesheet" href="shared/base.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -104,25 +105,29 @@
               <path d="M 65,28 C 71,30 77,37 83.5,46" stroke="#5c2406" stroke-width="2.2" stroke-linecap="round" fill="none" />
             </svg>
           </div>
-          <div>
-            <div class="brand-title-wrap">
-              <h1 class="brand-title">Bread Nerd</h1>
-              <span class="badge-tag">Baker's Lab <span class="badge-version">v0.1.1</span></span>
-            </div>
-            <p class="brand-subtitle">Precision hydration & formula engine for artisan loaves</p>
+          <div class="brand-title-wrap">
+            <h1 class="brand-title">Bread Nerd</h1>
+            <span class="badge-tag">Baker's Lab <span class="badge-version">v0.3.0</span></span>
           </div>
         </div>
 
-        <!-- Header Actions -->
+        <!-- Centered Kitchen Timer Pill -->
+        <div class="header-timer-center">
+          <button id="headerTimerBtn" class="action-btn header-timer-btn" title="Jump to Kitchen Timer" aria-label="Jump to Kitchen Timer">
+            <svg class="btn-svg" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/><path d="M12 2v3"/></svg>
+            <span class="btn-text" id="headerTimerText">Ready</span>
+          </button>
+        </div>
+
+        <!-- Header Actions: 4-Column Aligned Grid -->
         <div class="header-actions">
           <div class="header-actions-row header-actions-row-primary">
-            <button id="headerTimerBtn" class="action-btn header-timer-btn" title="Jump to Kitchen Timer">
-              <svg class="btn-svg" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/><path d="M12 2v3"/></svg>
-              <span class="btn-text" id="headerTimerText">Ready</span>
-            </button>
+            <a href="https://pizza.yurirage.com" class="action-btn companion-btn" title="Open Pizza Nerd companion app" target="_blank" rel="noopener noreferrer">
+              <span class="btn-text"><span class="btn-text-long">🍕 Pizza Nerd ↗</span><span class="btn-text-short">🍕 Pizza ↗</span></span>
+            </a>
             <button id="wakeLockBtn" class="action-btn" title="Keep screen awake while baking" aria-label="Keep screen awake" aria-pressed="false">
               <svg class="btn-svg" id="wakeLockIcon" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/></svg>
-              <span class="btn-text">Keep Screen Awake</span>
+              <span class="btn-text"><span class="btn-text-long">Keep Screen Awake</span><span class="btn-text-short">Screen Awake</span></span>
             </button>
             <button id="tempUnitBtn" class="action-btn" title="Toggle temperature unit between °F and °C" aria-label="Toggle temperature unit">
               <svg class="btn-svg" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
@@ -769,11 +774,12 @@
     <footer class="app-footer">
       <div class="footer-container">
         <div class="footer-content">
-          <p>Built for bread artisans and curious nerds. Formula inspired by <a href="https://www.kingarthurbaking.com/recipes/the-easiest-loaf-of-bread-youll-ever-bake-recipe" target="_blank" rel="noopener">King Arthur Baking</a>.</p>
+          <p class="footer-desc">Built for bread artisans and curious nerds. Formula inspired by <a href="https://www.kingarthurbaking.com/recipes/the-easiest-loaf-of-bread-youll-ever-bake-recipe" target="_blank" rel="noopener">King Arthur Baking</a>.</p>
+          <p class="footer-companion">Companion App: <a href="https://pizza.yurirage.com" target="_blank" rel="noopener noreferrer">Pizza Nerd (New York Style Pizza) →</a></p>
           <p class="footer-sub">All calculations in Metric (grams & ml). Local static client-side application — no external servers or analytics.</p>
         </div>
         <div class="footer-links">
-          <a href="https://github.com/yuri-rage/bread-nerd" target="_blank" rel="noopener" class="footer-github-link" title="Bread Nerd on GitHub (yuri-rage/bread-nerd)" aria-label="Bread Nerd on GitHub (yuri-rage/bread-nerd)">
+          <a href="https://github.com/yuri-rage/bread-nerd" target="_blank" rel="noopener noreferrer" class="footer-github-link" title="Bread Nerd on GitHub (yuri-rage/bread-nerd)" aria-label="Bread Nerd on GitHub (yuri-rage/bread-nerd)">
             <svg class="footer-github-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
             </svg>
@@ -805,6 +811,7 @@
     </div>
   </div>
 
+  <script src="shared/core.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

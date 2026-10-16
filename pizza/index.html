@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Nerd — New York Style Pizza Dough & Hydration Calculator</title>
+  <meta name="description" content="Interactive New York style pizza dough hydration calculator with baker's percentages, cold fermentation scheduling, and built-in kitchen timers.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f8fafc">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#080b12">
+  <meta name="theme-color" content="#080b12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pizza Nerd">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('pizzaNerd_theme');
+        var isLight = saved === 'light' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+        if (isLight) {
+          document.documentElement.setAttribute('data-theme', 'light');
+          var metas = document.querySelectorAll('meta[name="theme-color"]');
+          for (var i = 0; i < metas.length; i++) {
+            metas[i].setAttribute('content', '#f8fafc');
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="shared/base.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand">
+          <div class="brand-icon" title="Pizza Nerd">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Pizza Nerd Slice Logo">
+              <defs>
+                <linearGradient id="hdrCrust" x1="20%" y1="0%" x2="80%" y2="100%">
+                  <stop offset="0%" stop-color="#fde047" />
+                  <stop offset="18%" stop-color="#f59e0b" />
+                  <stop offset="50%" stop-color="#d97706" />
+                  <stop offset="80%" stop-color="#b45309" />
+                  <stop offset="100%" stop-color="#78350f" />
+                </linearGradient>
+                <linearGradient id="hdrCheese" x1="10%" y1="10%" x2="90%" y2="90%">
+                  <stop offset="0%" stop-color="#fef08a" />
+                  <stop offset="25%" stop-color="#fde047" />
+                  <stop offset="65%" stop-color="#fbbf24" />
+                  <stop offset="90%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#ea580c" />
+                </linearGradient>
+                <linearGradient id="hdrSauce" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ef4444" />
+                  <stop offset="50%" stop-color="#dc2626" />
+                  <stop offset="100%" stop-color="#991b1b" />
+                </linearGradient>
+                <radialGradient id="hdrPep" cx="35%" cy="35%" r="65%">
+                  <stop offset="0%" stop-color="#f87171" />
+                  <stop offset="40%" stop-color="#dc2626" />
+                  <stop offset="85%" stop-color="#991b1b" />
+                  <stop offset="100%" stop-color="#450a0a" />
+                </radialGradient>
+                <linearGradient id="hdrSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45" />
+                  <stop offset="40%" stop-color="#fde047" stop-opacity="0.2" />
+                  <stop offset="100%" stop-color="#ea580c" stop-opacity="0" />
+                </linearGradient>
+                <radialGradient id="hdrShadow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#000000" stop-opacity="0.45" />
+                  <stop offset="70%" stop-color="#000000" stop-opacity="0.1" />
+                  <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+
+              <ellipse cx="50" cy="84" rx="35" ry="5.5" fill="url(#hdrShadow)" />
+              <path d="M 16,28 C 36,16 64,16 84,28 C 87,35 83,40 76,41 C 60,35 40,35 24,41 C 17,40 13,35 16,28 Z"
+                    fill="url(#hdrCrust)" stroke="#5c2406" stroke-width="2" stroke-linejoin="round" />
+              <ellipse cx="32" cy="24" rx="4.5" ry="3" fill="#451a03" opacity="0.65" />
+              <ellipse cx="52" cy="21" rx="5.5" ry="3.2" fill="#451a03" opacity="0.75" />
+              <ellipse cx="70" cy="25" rx="4" ry="2.8" fill="#451a03" opacity="0.6" />
+              <path d="M 18,36 C 38,30 62,30 82,36 L 52,79 C 51,80.5 49,80.5 48,79 Z" fill="url(#hdrSauce)" stroke="#7f1d1d" stroke-width="1.5" />
+              <path d="M 21,38 C 39,32 61,32 79,38 L 51.5,77 C 50.8,78 49.2,78 48.5,77 Z" fill="url(#hdrCheese)" />
+              <path d="M 27,42 C 34,40 40,44 42,48 C 38,50 31,48 27,42 Z" fill="url(#hdrSauce)" opacity="0.85" />
+              <path d="M 64,44 C 71,43 75,47 73,53 C 68,52 64,48 64,44 Z" fill="url(#hdrSauce)" opacity="0.85" />
+              <ellipse cx="38" cy="46" rx="6.5" ry="5.5" fill="url(#hdrPep)" stroke="#450a0a" stroke-width="1.2" />
+              <ellipse cx="62" cy="48" rx="7" ry="6" fill="url(#hdrPep)" stroke="#450a0a" stroke-width="1.2" />
+              <ellipse cx="49" cy="62" rx="6" ry="5" fill="url(#hdrPep)" stroke="#450a0a" stroke-width="1.2" />
+              <circle cx="34" cy="56" r="1.3" fill="#15803d" />
+              <circle cx="56" cy="54" r="1.5" fill="#16a34a" />
+              <circle cx="44" cy="71" r="1.2" fill="#15803d" />
+            </svg>
+          </div>
+          <div class="brand-title-wrap">
+            <h1 class="brand-title">Pizza Nerd</h1>
+            <span class="badge-tag">Pizza Lab <span class="badge-version">v0.3.0</span></span>
+          </div>
+        </div>
+
+        <!-- Centered Kitchen Timer Pill -->
+        <div class="header-timer-center">
+          <button id="headerTimerBtn" class="action-btn header-timer-btn" title="Jump to Kitchen Timer" aria-label="Jump to Kitchen Timer">
+            <svg class="btn-svg" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6"/><path d="M22 6l-3-3"/><path d="M12 2v3"/></svg>
+            <span class="btn-text" id="headerTimerText">Ready</span>
+          </button>
+        </div>
+
+        <!-- Header Actions: 4-Column Aligned Grid -->
+        <div class="header-actions">
+          <div class="header-actions-row header-actions-row-primary">
+            <a href="https://bread.yurirage.com" class="action-btn companion-btn" title="Open Bread Nerd companion app" target="_blank" rel="noopener noreferrer">
+              <span class="btn-text"><span class="btn-text-long">🍞 Bread Nerd ↗</span><span class="btn-text-short">🍞 Bread ↗</span></span>
+            </a>
+            <button id="wakeLockBtn" class="action-btn" title="Keep screen awake while baking" aria-label="Keep screen awake" aria-pressed="false">
+              <svg class="btn-svg" id="wakeLockIcon" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/></svg>
+              <span class="btn-text"><span class="btn-text-long">Keep Screen Awake</span><span class="btn-text-short">Screen Awake</span></span>
+            </button>
+            <button id="tempUnitBtn" class="action-btn" title="Toggle temperature unit between °F and °C" aria-label="Toggle temperature unit">
+              <svg class="btn-svg" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+              <span class="btn-text" id="tempUnitText">°F</span>
+            </button>
+            <button id="themeToggleBtn" class="action-btn" title="Toggle light and dark theme" aria-label="Switch to light theme" aria-pressed="false">
+              <svg class="btn-svg" id="themeToggleIcon" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+              <span class="btn-text" id="themeToggleText">Light</span>
+            </button>
+          </div>
+          <div class="header-actions-row header-actions-row-secondary">
+            <button id="viewModeBtn" class="action-btn view-mode-btn" title="Toggle Recipe & Kitchen View (Hides Sliders)" aria-label="Toggle recipe view" aria-pressed="false">
+              <svg class="btn-svg" id="viewModeIcon" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              <span class="btn-text" id="viewModeText">Recipe View</span>
+            </button>
+            <button id="copyRecipeBtn" class="action-btn" title="Copy formula to clipboard" aria-label="Copy Formula">
+              <svg class="btn-svg" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span class="btn-text">Copy Formula</span>
+            </button>
+            <button id="printBtn" class="action-btn" title="Print recipe sheet" aria-label="Print Recipe">
+              <svg class="btn-svg" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span class="btn-text">Print Recipe</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Source Banner -->
+    <div class="source-banner">
+      <div class="source-container">
+        <div class="source-info">
+          <span class="source-badge">Style Basis</span>
+          <span class="source-title">Authentic NY Style Pizza — <em>High-Gluten Cold Ferment</em></span>
+        </div>
+        <span class="source-note font-mono">62% Hydration · 2% EVOO · 1.5% Sugar · 2.2% Salt</span>
+      </div>
+    </div>
+
+    <!-- Main App Content -->
+    <main class="main-container">
+      <div class="content-grid">
+        <!-- Left / Primary Column: Formula & Hydration Engine -->
+        <section class="formula-section">
+          
+          <!-- Batch Configuration Card -->
+          <div class="card glass-card card-calculator-controls">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2>Batch & Pizza Size Scaling</h2>
+              </div>
+              <button id="resetDefaultsBtn" class="text-btn" title="Reset to classic New York recipe defaults">Reset to NYC Defaults</button>
+            </div>
+
+            <div class="batch-selector-grid">
+              <!-- Number of Dough Balls -->
+              <div class="selector-field">
+                <label>Number of Pies (Dough Balls)</label>
+                <div class="pie-buttons" id="pieButtons">
+                  <button type="button" class="pie-btn" data-pies="1" aria-pressed="false">1 Pie</button>
+                  <button type="button" class="pie-btn active" data-pies="2" aria-pressed="true">2 Pies <small>(Standard)</small></button>
+                  <button type="button" class="pie-btn" data-pies="3" aria-pressed="false">3 Pies</button>
+                  <button type="button" class="pie-btn" data-pies="4" aria-pressed="false">4 Pies</button>
+                  <button type="button" class="pie-btn" data-pies="6" aria-pressed="false">6 Pies</button>
+                </div>
+              </div>
+
+              <!-- Pizza Diameter / Target Weight -->
+              <div class="selector-field">
+                <label>Pizza Diameter & Target Ball Weight</label>
+                <div class="size-buttons" id="sizeButtons">
+                  <button type="button" class="size-btn" data-size="12" aria-pressed="false">12" <small>(260g)</small></button>
+                  <button type="button" class="size-btn active" data-size="14" aria-pressed="true">14" <small>(330g - Med)</small></button>
+                  <button type="button" class="size-btn" data-size="16" aria-pressed="false">16" <small>(450g - Lg)</small></button>
+                  <button type="button" class="size-btn" data-size="18" aria-pressed="false">18" <small>(560g - Jumbo)</small></button>
+                </div>
+              </div>
+
+              <!-- Fermentation Schedule Path -->
+              <div class="selector-field ferment-field-full">
+                <label>Fermentation Method & Timing</label>
+                <div class="ferment-buttons" id="fermentButtons">
+                  <button type="button" class="ferment-btn active" data-ferment="cold" aria-pressed="true">
+                    ❄️ Cold Fermentation <small>(24h–72h Fridge Retard · Optimal NYC Flavor)</small>
+                  </button>
+                  <button type="button" class="ferment-btn" data-ferment="same_day" aria-pressed="false">
+                    ⚡ Same-Day Fast Dough <small>(3h–4.5h Room Rise · Higher Yeast)</small>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Total Flour Input -->
+              <div class="selector-field flour-field-full">
+                <label for="flourInput">Total Flour Weight (100% Base)</label>
+                <div class="input-unit-group">
+                  <input type="number" id="flourInput" min="100" max="5000" step="5" value="393">
+                  <span class="unit-label">grams</span>
+                </div>
+                <span class="input-helper">Automatically calculated from <span id="ballWeightDisplay">~330g</span> target dough ball size</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Specialty Flour & Blend Card (Optional) -->
+          <div class="card glass-card specialty-grain-card card-calculator-controls" id="specialtyGrainCard">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2>Flour Blend & Specialty Addition <span class="card-subtitle-tag">(Optional Addition)</span></h2>
+              </div>
+              <div class="grain-pct-display">
+                <span id="grainPctValue">0</span><span class="pct">%</span>
+              </div>
+            </div>
+
+            <p class="section-intro">
+              Enhance crispness or rustic depth. High-gluten bread flour automatically offsets to keep total flour (<span id="totalFlourEcho">393g</span>) constant.
+            </p>
+
+            <!-- Flour Type Selection Chips -->
+            <div class="grain-type-grid" id="grainTypeGrid">
+              <button type="button" class="grain-chip active" data-grain="semolina" aria-pressed="true">
+                <span class="grain-chip-icon" aria-hidden="true">🌾</span>
+                <span class="grain-chip-text">
+                  <span class="grain-chip-name">Semolina</span>
+                  <span class="grain-chip-hint">Crisp & Golden</span>
+                </span>
+              </button>
+              <button type="button" class="grain-chip" data-grain="whole_wheat" aria-pressed="false">
+                <span class="grain-chip-icon" aria-hidden="true">🌿</span>
+                <span class="grain-chip-text">
+                  <span class="grain-chip-name">Whole Wheat</span>
+                  <span class="grain-chip-hint">Nutty & Rustic</span>
+                </span>
+              </button>
+              <button type="button" class="grain-chip" data-grain="tipo00" aria-pressed="false">
+                <span class="grain-chip-icon" aria-hidden="true">🍕</span>
+                <span class="grain-chip-text">
+                  <span class="grain-chip-name">Type 00</span>
+                  <span class="grain-chip-hint">Silky & Tender</span>
+                </span>
+              </button>
+              <button type="button" class="grain-chip" data-grain="spelt" aria-pressed="false">
+                <span class="grain-chip-icon" aria-hidden="true">🥨</span>
+                <span class="grain-chip-text">
+                  <span class="grain-chip-name">Spelt</span>
+                  <span class="grain-chip-hint">Ancient & Honey</span>
+                </span>
+              </button>
+              <button type="button" class="grain-chip" data-grain="rye" aria-pressed="false">
+                <span class="grain-chip-icon" aria-hidden="true">🥪</span>
+                <span class="grain-chip-text">
+                  <span class="grain-chip-name">Dark Rye</span>
+                  <span class="grain-chip-hint">Earthy Depth</span>
+                </span>
+              </button>
+            </div>
+
+            <!-- Grain Slider -->
+            <div class="slider-wrapper">
+              <div class="slider-track-labels">
+                <span>0%<span class="label-desc"> (100% High-Gluten)</span></span>
+                <span>10%<span class="label-desc"> (Nuance)</span></span>
+                <span>20%<span class="label-desc"> (Distinct)</span></span>
+                <span>35%<span class="label-desc"> (Heavy Blend)</span></span>
+              </div>
+              <input type="range" id="specialtySlider" min="0" max="35" step="1" value="0" class="range-slider range-slider-amber" aria-label="Specialty flour blend percentage">
+            </div>
+
+            <!-- Quick Grain Ratio Presets -->
+            <div class="preset-buttons-container">
+              <span class="preset-label">Blend Presets:</span>
+              <div class="preset-btn-group" id="grainPresetGroup">
+                <button type="button" class="preset-btn grain-preset-btn active" data-pct="0" aria-pressed="true">0% (100% High-Gluten)</button>
+                <button type="button" class="preset-btn grain-preset-btn" data-pct="10" aria-pressed="false">10% Semolina Crisp</button>
+                <button type="button" class="preset-btn grain-preset-btn" data-pct="15" aria-pressed="false">15% Pizzeria Sweet-Spot</button>
+                <button type="button" class="preset-btn grain-preset-btn" data-pct="25" aria-pressed="false">25% Rustic NY Artisan</button>
+              </div>
+            </div>
+
+            <!-- Visual Flour Ratio Bar -->
+            <div class="flour-ratio-bar-wrap">
+              <div class="flour-ratio-bar">
+                <div class="ratio-segment bread-flour-seg" id="breadFlourSegment" style="width: 100%">
+                  <span class="seg-label" id="breadFlourSegLabel">High-Gluten Flour: 100%</span>
+                </div>
+                <div class="ratio-segment specialty-seg" id="specialtySegment" style="width: 0%">
+                  <span class="seg-label" id="specialtySegLabel"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auto-Hydration Toggle Row -->
+            <div class="auto-hydration-toggle-row">
+              <label class="toggle-switch-label">
+                <input type="checkbox" id="autoHydrationToggle" checked>
+                <span class="toggle-slider-round"></span>
+                <span class="toggle-text">
+                  <strong>Auto-adjust hydration for flour absorption</strong>
+                  <span class="toggle-hint" id="autoHydrationHint">Keeps dough consistency uniform as specialty flours change</span>
+                </span>
+              </label>
+            </div>
+
+            <!-- Live Grain Advisory & Science Notes -->
+            <div class="grain-advisory-box" id="grainAdvisoryBox">
+              <!-- Populated dynamically by app.js based on selected grain & % -->
+            </div>
+          </div>
+
+          <!-- Hydration Master Controller Card -->
+          <div class="card glass-card card-calculator-controls">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2>Hydration Percentage</h2>
+              </div>
+              <div class="hydration-header-right">
+                <span class="hydration-comp-badge hidden" id="hydrationCompBadge">+0.0% (grain)</span>
+                <div class="hydration-value-display">
+                  <span id="hydrationValue">62.0</span><span class="pct">%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hydration Slider -->
+            <div class="slider-wrapper">
+              <div class="slider-track-labels">
+                <span>55%<span class="label-desc"> (Stiff Deck)</span></span>
+                <span>62%<span class="label-desc"> (Classic NYC)</span></span>
+                <span>65%<span class="label-desc"> (Steel / Home)</span></span>
+                <span>75%<span class="label-desc"> (Wet Pan)</span></span>
+              </div>
+              <input type="range" id="hydrationSlider" min="55" max="75" step="0.1" value="62.0" class="range-slider" aria-label="Target hydration percentage">
+              <div class="slider-ticks">
+                <span class="tick" style="left: 0%"></span>
+                <span class="tick active-tick" style="left: 35%"></span>
+                <span class="tick" style="left: 50%"></span>
+                <span class="tick" style="left: 70%"></span>
+                <span class="tick" style="left: 100%"></span>
+              </div>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="preset-buttons-container" style="margin-bottom: 0;">
+              <span class="preset-label">Quick Styles:</span>
+              <div class="preset-btn-group" id="hydrationPresetGroup">
+                <button type="button" class="preset-btn hydration-preset-btn" data-hydration="58" aria-pressed="false">58% Crisp Deck</button>
+                <button type="button" class="preset-btn hydration-preset-btn active" data-hydration="62" aria-pressed="true">62% Classic NYC</button>
+                <button type="button" class="preset-btn hydration-preset-btn" data-hydration="65" aria-pressed="false">65% Steel / Home</button>
+                <button type="button" class="preset-btn hydration-preset-btn" data-hydration="68" aria-pressed="false">68% Airy Neo-NY</button>
+                <button type="button" class="preset-btn hydration-preset-btn" data-hydration="72" aria-pressed="false">72% Wet Pan</button>
+              </div>
+            </div>
+
+            <!-- Live Dough Character & Handling Box -->
+            <div class="hydration-profile-box" id="hydrationProfileBox" style="margin-top: 1rem;">
+              <div class="profile-header">
+                <span class="profile-badge" id="profileBadge">Classic New York Street Slice (62.0%)</span>
+                <span class="difficulty-rating" id="profileDifficulty">Handling: ★☆☆☆☆ Easy</span>
+              </div>
+              <p class="profile-description" id="profileDescription">
+                The authentic NYC standard. The dough forms a smooth, non-sticky ball that stretches effortlessly into a thin, wide round with high tensile strength.
+              </p>
+              <div class="profile-tips" id="profileTips">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Formula & Ingredients Card -->
+          <div class="card glass-card formula-card card-recipe-ingredients">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2>Baker's Formula (Grams & Milliliters)</h2>
+              </div>
+              <div class="formula-meta">
+                <span id="doughWeightBadge" class="stat-badge">Total Dough: 661g</span>
+                <span id="pieWeightBadge" class="stat-badge">~330g / ball</span>
+              </div>
+            </div>
+
+            <!-- Ingredients Table -->
+            <div class="table-container">
+              <table class="formula-table">
+                <thead>
+                  <tr>
+                    <th class="th-ingredient">Ingredient</th>
+                    <th class="th-pct">Baker's %</th>
+                    <th class="th-weight">Weight (g / ml)</th>
+                    <th class="th-ref">Vol. Reference</th>
+                  </tr>
+                </thead>
+                <tbody id="ingredientsTbody">
+                  <!-- Dynamically Rendered by app.js -->
+                </tbody>
+                <tfoot id="ingredientsTfoot">
+                  <!-- Summary row dynamically rendered by app.js -->
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Estimated Topping Guide -->
+            <div class="topping-guide-callout" id="toppingGuideCallout">
+              <!-- Dynamically rendered by app.js based on size -->
+            </div>
+
+            <!-- Formula Fine-Tuning Drawer Toggle -->
+            <div class="fine-tuning-accordion">
+              <button type="button" id="toggleTuningBtn" class="accordion-header">
+                <span>Advanced Pizza Lab Controls (Oil, Sugar/Malt, Salt, Leavening)</span>
+                <span class="accordion-arrow">▼</span>
+              </button>
+              <div class="accordion-body hidden" id="tuningBody">
+                <div class="tuning-grid">
+                  <!-- Extra Virgin Olive Oil -->
+                  <div class="tuning-item">
+                    <label for="oilSlider">
+                      <span>Extra Virgin Olive Oil <span class="default-badge">Default: 2.0%</span></span>
+                      <strong id="oilPctLabel">2.0% (7.9g)</strong>
+                    </label>
+                    <div class="sugar-toggle-wrap">
+                      <input type="range" id="oilSlider" min="0" max="4.0" step="0.1" value="2.0" class="range-slider-sm" aria-label="Extra virgin olive oil percentage">
+                      <label for="includeOilCheck" class="checkbox-inline">
+                        <input type="checkbox" id="includeOilCheck" checked> Include EVOO
+                      </label>
+                    </div>
+                    <span class="tuning-desc" id="oilDesc">Coats gluten strands for iconic NY fold & prevents dry cracker texture in 500°F home ovens.</span>
+                  </div>
+
+                  <!-- Sugar / Malt Powder -->
+                  <div class="tuning-item">
+                    <label for="sugarSlider">
+                      <span>Sugar / Non-Diastatic Malt <span class="default-badge">Default: 1.5%</span></span>
+                      <strong id="sugarPctLabel">1.5% (5.9g)</strong>
+                    </label>
+                    <div class="salt-type-wrap" style="margin-bottom:0.4rem;">
+                      <select id="sugarTypeSelect" class="custom-select" aria-label="Sugar or malt type">
+                        <option value="granulated" selected>Granulated Sugar — Default</option>
+                        <option value="malt">Non-Diastatic Malt Powder (NYC Pizzeria Secret)</option>
+                        <option value="honey">Honey / Agave</option>
+                      </select>
+                    </div>
+                    <div class="sugar-toggle-wrap">
+                      <input type="range" id="sugarSlider" min="0" max="3.0" step="0.1" value="1.5" class="range-slider-sm" aria-label="Sugar or malt percentage">
+                      <label for="includeSugarCheck" class="checkbox-inline">
+                        <input type="checkbox" id="includeSugarCheck" checked> Include Sugar/Malt
+                      </label>
+                    </div>
+                    <span class="tuning-desc" id="sugarDesc">Feeds yeast over 24–72h cold ferment & provides golden Maillard browning at 500°F–550°F.</span>
+                  </div>
+
+                  <!-- Salt & Crystal Size -->
+                  <div class="tuning-item">
+                    <label for="saltSlider">
+                      <span>Salt & Crystal Size <span class="default-badge">Default: 2.2% Table</span></span>
+                      <strong id="saltPctLabel">2.2% (8.6g)</strong>
+                    </label>
+                    <div class="salt-type-wrap">
+                      <label for="saltTypeSelect" class="sr-only">Salt crystal type and brand</label>
+                      <select id="saltTypeSelect" class="custom-select" aria-label="Salt crystal type and brand">
+                        <option value="table" selected>Table / Fine Sea Salt (6.0g/tsp) — Default</option>
+                        <option value="diamond">Diamond Crystal Kosher Salt (2.8g/tsp — light flakes)</option>
+                        <option value="morton">Morton Coarse Kosher Salt (4.8g/tsp — dense flakes)</option>
+                      </select>
+                    </div>
+                    <div style="margin-top: 0.45rem;">
+                      <input type="range" id="saltSlider" min="1.5" max="3.0" step="0.1" value="2.2" class="range-slider-sm" aria-label="Salt percentage">
+                    </div>
+                    <span class="tuning-desc" id="saltDesc">Standard fine salt. Dissolves rapidly into dough.</span>
+                  </div>
+
+                  <!-- Leavening Method & Timing -->
+                  <div class="tuning-item">
+                    <label for="yeastTypeSelect">
+                      <span>Leavening Method <span class="default-badge">Default: Instant (0.35%)</span></span>
+                      <strong id="yeastPctLabel">0.35% (Instant IDY)</strong>
+                    </label>
+                    <div class="yeast-options">
+                      <select id="yeastTypeSelect" class="custom-select" aria-label="Leavening method">
+                        <option value="instant" selected>Instant Dry Yeast (0.35% Cold / 0.85% Fast) — Default</option>
+                        <option value="active_dry">Active Dry Yeast (1.25x — 10m Warm Bloom)</option>
+                        <option value="fresh">Fresh / Cake Yeast (3x — Fast & Sweet)</option>
+                        <option value="sourdough">Active Sourdough Starter (100% Hydration)</option>
+                      </select>
+                    </div>
+                    <!-- Inoculation Slider for Sourdough -->
+                    <div id="sourdoughControls" class="sourdough-controls hidden">
+                      <label for="starterRateSlider" class="sub-label">
+                        <span>Starter Inoculation Rate: <span class="default-badge">Default: 15%</span></span>
+                        <strong id="starterRateLabel">15% starter</strong>
+                      </label>
+                      <input type="range" id="starterRateSlider" min="10" max="25" step="1" value="15" class="range-slider-sm" aria-label="Starter inoculation rate percentage">
+                      <span class="tuning-desc">Starter is 50% flour & 50% water. Base flour and water automatically offset to keep dough size and hydration exact!</span>
+                    </div>
+                    <span class="tuning-desc" id="yeastDesc">Calibrated for long cold refrigerator fermentation.</span>
+                  </div>
+
+                  <div class="tuning-item">
+                    <label>
+                      <span>Flour Blend Ratio <span class="default-badge">Default: 100% High-Gluten</span></span>
+                      <strong id="drawerGrainRatioLabel">100% High-Gluten Bread Flour</strong>
+                    </label>
+                    <span class="tuning-desc">Controlled above in the <em>Flour Blend & Specialty Addition</em> card.</span>
+                  </div>
+                </div>
+
+                <!-- Footer with Reset Advanced Controls Button -->
+                <div class="tuning-footer">
+                  <span class="tuning-footer-hint">Restore oil, sugar, salt, and leavening defaults without resetting batch size or hydration:</span>
+                  <button type="button" id="resetAdvancedBtn" class="btn-subtle-reset">
+                    ↺ Reset Advanced Ingredients to Defaults
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right / Secondary Column: Interactive Timeline, Timers & Step-by-Step -->
+        <section class="process-section">
+          
+          <!-- Active Timer Display Floating Card -->
+          <div class="card glass-card timer-hub-card" id="timerHubCard">
+            <div class="card-header timer-hub-header">
+              <div class="card-title-group">
+                <h2>Kitchen Timer</h2>
+              </div>
+              <span id="activeTimerBadge" class="timer-status-badge idle">Ready</span>
+            </div>
+
+            <div class="active-timer-display compact">
+              <div class="timer-main-row">
+                <div class="timer-countdown" id="timerCountdown">00:00</div>
+                <div class="timer-controls">
+                  <button type="button" id="startTimerBtn" class="timer-btn primary" disabled><svg class="timer-btn-svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg><span>Start</span></button>
+                  <button type="button" id="resetTimerBtn" class="timer-btn" disabled title="Reset timer to initial step duration"><svg class="timer-btn-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg><span>Reset</span></button>
+                  <button type="button" id="clearTimerBtn" class="timer-btn timer-btn-clear" disabled title="Reset timer to 0:00"><svg class="timer-btn-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Clear</span></button>
+                </div>
+              </div>
+              <div class="timer-label" id="timerLabel">Select a pizza step below to start</div>
+              
+              <!-- Quick custom minutes (add / subtract) -->
+              <div class="quick-timer-chips">
+                <button type="button" class="chip-btn chip-sub" data-min="-5" title="Subtract 5 minutes">-5m</button>
+                <button type="button" class="chip-btn chip-sub" data-min="-1" title="Subtract 1 minute">-1m</button>
+                <button type="button" class="chip-btn chip-add" data-min="1" title="Add 1 minute">+1m</button>
+                <button type="button" class="chip-btn chip-add" data-min="5" title="Add 5 minutes">+5m</button>
+                <button type="button" class="chip-btn chip-add" data-min="10" title="Add 10 minutes">+10m</button>
+                <button type="button" class="chip-btn chip-add" data-min="20" title="Add 20 minutes">+20m</button>
+                <button type="button" class="chip-btn chip-add" data-min="45" title="Add 45 minutes">+45m</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step Pizza Lab Method -->
+          <div class="card glass-card card-recipe-steps">
+            <div class="card-header method-card-header">
+              <div class="card-title-group">
+                <h2>Step-by-Step Method</h2>
+              </div>
+              <div class="method-header-controls">
+                <div class="surface-selector-bar">
+                  <span class="surface-bar-label">Surface:</span>
+                  <div class="surface-btn-group" id="surfaceBtnGroup">
+                    <button type="button" class="surface-btn active" data-surface="steel" aria-pressed="true">
+                      Baking Steel / Stone
+                    </button>
+                    <button type="button" class="surface-btn" data-surface="pan" aria-pressed="false">
+                      Pan / Sheet
+                    </button>
+                    <button type="button" class="surface-btn" data-surface="outdoor_oven" aria-pressed="false">
+                      Outdoor Oven
+                    </button>
+                  </div>
+                </div>
+                <span class="steps-progress" id="stepsProgress">0 / 9 Complete</span>
+              </div>
+            </div>
+
+            <div class="timeline-container" id="timelineContainer">
+              <!-- STEP 1 -->
+              <div class="timeline-step" data-step="1">
+                <div class="step-marker">
+                  <div class="marker-circle">1</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step1Phase">Mise en Place</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step1Title">Weigh Flour, Salt & Sugar</h3>
+                  <p class="step-desc" id="step1Desc"></p>
+                  <div class="step-actions" id="step1Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 2 -->
+              <div class="timeline-step" data-step="2">
+                <div class="step-marker">
+                  <div class="marker-circle">2</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step2Phase">Liquid Preparation</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step2Title">Measure Water & Add Yeast</h3>
+                  <p class="step-desc" id="step2Desc"></p>
+                  <div class="step-actions" id="step2Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 3 -->
+              <div class="timeline-step" data-step="3">
+                <div class="step-marker">
+                  <div class="marker-circle">3</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step3Phase">Hydration Rest & Oil Drizzle</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step3Title">Mix Shaggy Mass, Rest 10m & Stream Olive Oil</h3>
+                  <p class="step-desc" id="step3Desc"></p>
+                  <div class="step-actions" id="step3Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 4 -->
+              <div class="timeline-step" data-step="4">
+                <div class="step-marker">
+                  <div class="marker-circle">4</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step4Phase">Gluten Development</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step4Title">Knead until Smooth & Elastic</h3>
+                  <p class="step-desc" id="step4Desc"></p>
+                  <div class="step-actions" id="step4Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 5 -->
+              <div class="timeline-step" data-step="5">
+                <div class="step-marker">
+                  <div class="marker-circle">5</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step5Phase">Bulk Rest & Balling</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step5Title">Rest 20m & Shape Dough Balls</h3>
+                  <p class="step-desc" id="step5Desc"></p>
+                  <div class="step-meta" id="step5Meta"></div>
+                  <div class="step-actions" id="step5Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 6 -->
+              <div class="timeline-step" data-step="6">
+                <div class="step-marker">
+                  <div class="marker-circle">6</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step6Phase">Fermentation</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step6Title">Cold Fermentation in Refrigerator (24–72 hrs)</h3>
+                  <p class="step-desc" id="step6Desc"></p>
+                  <div class="step-actions" id="step6Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 7 -->
+              <div class="timeline-step" data-step="7">
+                <div class="step-marker">
+                  <div class="marker-circle">7</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step7Phase">Room Tempering</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step7Title">Warm Dough to Room Temp (90–120 min)</h3>
+                  <p class="step-desc" id="step7Desc"></p>
+                  <div class="step-actions" id="step7Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 8 -->
+              <div class="timeline-step" data-step="8">
+                <div class="step-marker">
+                  <div class="marker-circle">8</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step8Phase">Oven Setup</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step8Title">Preheat Baking Surface</h3>
+                  <p class="step-desc" id="step8Desc"></p>
+                  <div class="step-actions" id="step8Actions"></div>
+                </div>
+              </div>
+
+              <!-- STEP 9 -->
+              <div class="timeline-step" data-step="9">
+                <div class="step-marker">
+                  <div class="marker-circle">9</div>
+                  <div class="marker-line"></div>
+                </div>
+                <div class="step-card">
+                  <div class="step-header">
+                    <span class="step-phase" id="step9Phase">Stretch, Bake & Rest</span>
+                    <button type="button" class="step-check-btn" title="Mark step complete">✓</button>
+                  </div>
+                  <h3 class="step-title" id="step9Title">Knuckle Stretch, Top, Bake & Wire Rack Rest</h3>
+                  <p class="step-desc" id="step9Desc"></p>
+                  <div class="step-actions" id="step9Actions"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-container">
+        <div class="footer-content">
+          <p class="footer-desc">Built for pizza artisans and curious nerds. Dedicated to the art and science of authentic New York style pizza.</p>
+          <p class="footer-companion">Companion App: <a href="https://bread.yurirage.com" target="_blank" rel="noopener noreferrer">Bread Nerd (Artisan Loaves) →</a></p>
+          <p class="footer-sub">All calculations in Metric (grams & ml). Local static client-side application — no external servers or analytics.</p>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/yuri-rage/bread-nerd" target="_blank" rel="noopener noreferrer" class="footer-github-link" title="Pizza Nerd on GitHub (yuri-rage/bread-nerd)" aria-label="Pizza Nerd on GitHub (yuri-rage/bread-nerd)">
+            <svg class="footer-github-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+            <span>GitHub</span>
+          </a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Dedicated Hidden Live Region for Timer Status Announcements (Screen Readers) -->
+  <div id="timerAriaAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Mobile Floating Active Timer Widget (Phone only, appears when timer is active) -->
+  <div id="mobileFloatingTimer" class="mobile-floating-timer hidden">
+    <button type="button" class="mobile-timer-clickable" id="mobileTimerJump" title="Jump to Kitchen Timer" aria-label="Jump to Kitchen Timer">
+      <span class="mobile-timer-icon" aria-hidden="true">⏱</span>
+      <span class="mobile-timer-digits" id="mobileTimerDigits">00:00</span>
+      <span class="mobile-timer-sub" id="mobileTimerLabel">Ready</span>
+    </button>
+    <button type="button" class="mobile-timer-action-btn" id="mobileTimerToggleBtn" title="Pause or resume timer" aria-label="Pause or resume timer">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+    </button>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Hidden Printable Recipe Card (Revealed during window.print()) -->
+  <div class="print-recipe-card" id="printRecipeCard"></div>
+
+  <script src="shared/core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

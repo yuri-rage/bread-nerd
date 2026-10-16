@@ -1,0 +1,303 @@
+/* ==========================================================================
+   PIZZA NERD — App-Specific Stylesheet
+   Companion-specific pizza size presets, dough styles & topping calculations.
+   All shared layout, cards, tables, steps, timers, footer, and light theme
+   are unified in shared/base.css.
+   ========================================================================== */
+
+/* Brand Title Tomato Red Accent */
+.brand-title {
+  background: linear-gradient(to right, #ffffff, #fca5a5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .brand-title {
+  background: linear-gradient(to right, #b45309, #dc2626);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Pizza Batch Form Layout */
+.flour-field-full {
+  grid-column: 1 / -1;
+}
+
+/* Pizza Size & Pie Count Buttons */
+.pie-buttons,
+.size-buttons,
+.ferment-buttons {
+  display: flex;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.pie-btn,
+.size-btn,
+.ferment-btn {
+  flex: 1;
+  padding: 0.55rem 0.45rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.pie-btn:hover,
+.size-btn:hover,
+.ferment-btn:hover {
+  background: #334155;
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.pie-btn.active,
+.size-btn.active,
+.ferment-btn.active {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: var(--crust-gold);
+  color: var(--crust-gold);
+}
+
+[data-theme="light"] .pie-btn.active,
+[data-theme="light"] .size-btn.active,
+[data-theme="light"] .ferment-btn.active {
+  background: #fef3c7;
+  border-color: #b45309;
+  color: #78350f;
+}
+
+.pie-btn small,
+.size-btn small,
+.ferment-btn small {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+[data-theme="light"] .pie-btn small,
+[data-theme="light"] .size-btn small,
+[data-theme="light"] .ferment-btn small {
+  color: #475569;
+}
+
+/* Ferment Style Row */
+.ferment-style-row {
+  margin-top: 0.75rem;
+}
+
+/* Pizza Special Ingredient Table Row */
+.special-ingredient-row td {
+  border-top: 1px dashed var(--border-medium);
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* Topping Guide Box */
+.topping-guide-box {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+[data-theme="light"] .topping-guide-box {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.topping-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.topping-guide-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.topping-guide-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--tomato-red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="light"] .topping-guide-tag {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.topping-guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.topping-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.topping-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.topping-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--crust-gold);
+  font-family: var(--font-mono);
+}
+
+[data-theme="light"] .topping-value {
+  color: #b45309;
+}
+
+.topping-value small {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.topping-total {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.topping-guide-note {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.45rem;
+}
+
+@media (max-width: 480px) {
+  .pie-btn, .size-btn, .ferment-btn {
+    min-width: 48px;
+    padding: 0.4rem 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .pie-btn small, .size-btn small, .ferment-btn small {
+    font-size: 0.62rem;
+  }
+
+  .topping-guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Additional Pizza Button States & Contrast */
+.pie-btn.active small,
+.size-btn.active small,
+.ferment-btn.active small {
+  color: #fde68a;
+}
+
+[data-theme="light"] .pie-btn,
+[data-theme="light"] .size-btn,
+[data-theme="light"] .ferment-btn {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+[data-theme="light"] .pie-btn:hover,
+[data-theme="light"] .size-btn:hover,
+[data-theme="light"] .ferment-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="light"] .pie-btn.active small,
+[data-theme="light"] .size-btn.active small,
+[data-theme="light"] .ferment-btn.active small {
+  color: #92400e;
+}
+
+[data-theme="light"] .topping-label,
+[data-theme="light"] .topping-total,
+[data-theme="light"] .topping-guide-note {
+  color: #475569;
+}
+
+[data-theme="light"] .topping-guide-note {
+  border-top-color: #e2e8f0;
+}
+
+
+/* Additional Field & Topping Guide Elements */
+.ferment-field-full {
+  grid-column: 1 / -1;
+}
+
+.topping-guide-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.topping-guide-item {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.topping-guide-item strong {
+  color: var(--crust-gold);
+}
+
+[data-theme="light"] .topping-guide-item {
+  color: #334155;
+}
+
+[data-theme="light"] .topping-guide-item strong {
+  color: #b45309;
+}
+
+[data-theme="light"] .bread-flour-seg {
+  background: #b45309;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+[data-theme="light"] .specialty-seg {
+  background: #9a3412;
+  color: #ffffff;
+}
+
+.advisory-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}

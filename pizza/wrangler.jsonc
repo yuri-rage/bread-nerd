@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/wrangler@4/config-schema.json",
+  "name": "pizza-nerd",
+  "compatibility_date": "2026-10-15",
+  "assets": {
+    "directory": "."
+  }
+}

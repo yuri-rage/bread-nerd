@@ -184,16 +184,39 @@
   // State object
   const state = { ...KAB_DEFAULTS };
 
-  // Timer state
-  let timerInterval = null;
-  let timerRemainingSeconds = 0;
-  let timerTotalSeconds = 0;
-  let timerIsRunning = false;
-  let timerLabelText = 'Ready';
-  let timerEndTime = null;
-  let wakeLockSentinel = null;
-  let wakeLockWanted = false;
-  let sharedAudioCtx = null;
+  // KitchenCore Shared Infrastructure Services
+  const Core = (typeof KitchenCore !== 'undefined')
+    ? KitchenCore
+    : (typeof require !== 'undefined' ? require('../shared/core.js') : null);
+
+  const toasts = Core ? Core.createToastManager({ containerId: 'toastContainer' }) : null;
+  const showToast = (msg, type = 'info') => (toasts ? toasts.show(msg, type) : console.log(`[Toast ${type}]: ${msg}`));
+
+  const themeMgr = Core ? Core.createThemeManager({
+    storageKey: 'breadNerd_theme',
+    legacyKeys: ['bread_nerd_theme'],
+    buttonId: 'themeToggleBtn',
+    textId: 'themeToggleText',
+    iconId: 'themeToggleIcon'
+  }) : null;
+
+  const wakeLockMgr = Core ? Core.createWakeLockManager({
+    buttonId: 'wakeLockBtn',
+    toastManager: toasts
+  }) : null;
+
+  const timerEngine = Core ? Core.createTimer({
+    storageKey: STORAGE_TIMER_KEY,
+    appName: 'Bread Nerd',
+    defaultTitle: 'Bread Nerd — Interactive Bread Hydration & Baker\'s Calculator',
+    toastManager: toasts
+  }) : null;
+
+  const checklistMgr = Core ? Core.createChecklistManager({
+    storageKey: 'breadNerd_stepProgress',
+    stepSelector: '.timeline-step',
+    progressSelector: '#stepsProgress'
+  }) : null;
 
   // Helper to ensure numbers never evaluate to NaN
   function sanitizeNumber(val, fallback) {
@@ -1461,423 +1484,29 @@
     DOM.tempUnitText.textContent = `°${state.tempUnit}`;
   }
 
-  // --- Timer Sound (Web Audio API Synthesizer) ---
-  function getAudioContext() {
-    if (!sharedAudioCtx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        sharedAudioCtx = new AudioCtx();
-      }
-    }
-    if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
-      sharedAudioCtx.resume().catch(() => {});
-    }
-    return sharedAudioCtx;
-  }
-
-  function playTimerChime() {
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-
-      const playTone = (freq, start, duration) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-        gain.gain.setValueAtTime(0.001, ctx.currentTime + start);
-        gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + start + 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + start + duration);
-      };
-
-      // Play pleasant 3-tone chime: A5, C#6, E6
-      playTone(880, 0, 0.4);
-      playTone(1108.7, 0.25, 0.4);
-      playTone(1318.5, 0.5, 0.8);
-      setTimeout(() => {
-        playTone(880, 0, 0.3);
-        playTone(1318.5, 0.2, 0.7);
-      }, 1000);
-    } catch (e) {
-      console.warn('Audio chime unsupported or blocked', e);
-    }
-  }
-
-  // --- Timer Hub Functionality ---
-  function formatTime(seconds) {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
+  // --- Timer & Infrastructure Facade (Delegated to KitchenCore) ---
+  const formatTime = Core ? Core.formatTime : (seconds) => {
+    const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-
-    if (hrs > 0) {
-      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }
+  };
 
-  function updateTimerUI() {
-    DOM.timerCountdown.textContent = formatTime(timerRemainingSeconds);
-    DOM.timerLabel.textContent = timerLabelText;
-
-    // Header timer pill button synchronization
-    if (DOM.headerTimerBtn && DOM.headerTimerText) {
-      if (timerRemainingSeconds <= 0 && timerTotalSeconds > 0) {
-        DOM.headerTimerBtn.className = 'action-btn header-timer-btn ringing';
-        DOM.headerTimerText.textContent = 'DONE!';
-        DOM.headerTimerBtn.setAttribute('aria-label', 'Baking timer: DONE! Jump to timer card');
-      } else if (timerIsRunning) {
-        const timeStr = formatTime(timerRemainingSeconds);
-        DOM.headerTimerBtn.className = 'action-btn header-timer-btn running';
-        DOM.headerTimerText.textContent = timeStr;
-        DOM.headerTimerBtn.setAttribute('aria-label', `Baking timer running: ${timeStr}. Jump to timer card`);
-      } else if (timerTotalSeconds > 0 && timerRemainingSeconds > 0) {
-        const timeStr = formatTime(timerRemainingSeconds);
-        DOM.headerTimerBtn.className = 'action-btn header-timer-btn paused';
-        DOM.headerTimerText.textContent = `${timeStr} ⏸`;
-        DOM.headerTimerBtn.setAttribute('aria-label', `Baking timer paused: ${timeStr}. Jump to timer card`);
-      } else {
-        DOM.headerTimerBtn.className = 'action-btn header-timer-btn idle';
-        DOM.headerTimerText.textContent = 'Ready';
-        DOM.headerTimerBtn.setAttribute('aria-label', 'Baking timer: Ready. Jump to timer card');
-      }
-    }
-
-    // Mobile floating timer widget synchronization (phone viewport)
-    const SVG_MOBILE_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
-    const SVG_MOBILE_PAUSE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
-    const SVG_MOBILE_PLAY = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-
-    const SVG_TIMER_PLAY = '<svg class="timer-btn-svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-    const SVG_TIMER_PAUSE = '<svg class="timer-btn-svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
-
-    if (DOM.mobileFloatingTimer) {
-      if (timerRemainingSeconds <= 0 && timerTotalSeconds > 0) {
-        DOM.mobileFloatingTimer.className = 'mobile-floating-timer ringing';
-        if (DOM.mobileTimerDigits) DOM.mobileTimerDigits.textContent = 'DONE!';
-        if (DOM.mobileTimerLabel) DOM.mobileTimerLabel.textContent = timerLabelText;
-        if (DOM.mobileTimerToggleBtn) {
-          DOM.mobileTimerToggleBtn.innerHTML = SVG_MOBILE_CHECK;
-          DOM.mobileTimerToggleBtn.setAttribute('aria-label', 'Dismiss finished timer');
-          DOM.mobileTimerToggleBtn.title = 'Dismiss finished timer';
-        }
-        document.body.classList.add('has-floating-timer');
-      } else if (timerIsRunning) {
-        DOM.mobileFloatingTimer.className = 'mobile-floating-timer running';
-        if (DOM.mobileTimerDigits) DOM.mobileTimerDigits.textContent = formatTime(timerRemainingSeconds);
-        if (DOM.mobileTimerLabel) DOM.mobileTimerLabel.textContent = timerLabelText;
-        if (DOM.mobileTimerToggleBtn) {
-          DOM.mobileTimerToggleBtn.innerHTML = SVG_MOBILE_PAUSE;
-          DOM.mobileTimerToggleBtn.setAttribute('aria-label', 'Pause timer');
-          DOM.mobileTimerToggleBtn.title = 'Pause timer';
-        }
-        document.body.classList.add('has-floating-timer');
-      } else if (timerTotalSeconds > 0 && timerRemainingSeconds > 0) {
-        DOM.mobileFloatingTimer.className = 'mobile-floating-timer paused';
-        if (DOM.mobileTimerDigits) DOM.mobileTimerDigits.textContent = formatTime(timerRemainingSeconds);
-        if (DOM.mobileTimerLabel) DOM.mobileTimerLabel.textContent = timerLabelText;
-        if (DOM.mobileTimerToggleBtn) {
-          DOM.mobileTimerToggleBtn.innerHTML = SVG_MOBILE_PLAY;
-          DOM.mobileTimerToggleBtn.setAttribute('aria-label', 'Resume timer');
-          DOM.mobileTimerToggleBtn.title = 'Resume timer';
-        }
-        document.body.classList.add('has-floating-timer');
-      } else {
-        DOM.mobileFloatingTimer.className = 'mobile-floating-timer hidden';
-        if (DOM.mobileTimerToggleBtn) {
-          DOM.mobileTimerToggleBtn.innerHTML = SVG_MOBILE_PLAY;
-          DOM.mobileTimerToggleBtn.setAttribute('aria-label', 'Pause or resume timer');
-          DOM.mobileTimerToggleBtn.title = 'Pause or resume timer';
-        }
-        document.body.classList.remove('has-floating-timer');
-      }
-    }
-
-    if (timerRemainingSeconds <= 0 && timerTotalSeconds > 0) {
-      DOM.activeTimerBadge.className = 'timer-status-badge ringing';
-      DOM.activeTimerBadge.textContent = 'DONE!';
-      document.title = '🔔 TIME UP! Bread Nerd';
-      DOM.startTimerBtn.innerHTML = `${SVG_TIMER_PLAY}<span>Start</span>`;
-      DOM.startTimerBtn.disabled = true;
-      DOM.startTimerBtn.className = 'timer-btn primary';
-      if (DOM.resetTimerBtn) DOM.resetTimerBtn.disabled = false;
-      if (DOM.clearTimerBtn) DOM.clearTimerBtn.disabled = false;
-    } else if (timerIsRunning) {
-      DOM.activeTimerBadge.className = 'timer-status-badge running';
-      DOM.activeTimerBadge.textContent = 'RUNNING';
-      document.title = `(${formatTime(timerRemainingSeconds)}) ${timerLabelText} — Bread Nerd`;
-      DOM.startTimerBtn.innerHTML = `${SVG_TIMER_PAUSE}<span>Pause</span>`;
-      DOM.startTimerBtn.disabled = false;
-      DOM.startTimerBtn.className = 'timer-btn timer-btn-pause';
-      if (DOM.resetTimerBtn) DOM.resetTimerBtn.disabled = false;
-      if (DOM.clearTimerBtn) DOM.clearTimerBtn.disabled = false;
-    } else if (timerTotalSeconds > 0 && timerRemainingSeconds > 0) {
-      DOM.activeTimerBadge.className = 'timer-status-badge paused';
-      DOM.activeTimerBadge.textContent = 'PAUSED';
-      document.title = `[Paused] ${formatTime(timerRemainingSeconds)} — Bread Nerd`;
-      const resumeLabel = (timerTotalSeconds > timerRemainingSeconds) ? 'Resume' : 'Start';
-      DOM.startTimerBtn.innerHTML = `${SVG_TIMER_PLAY}<span>${resumeLabel}</span>`;
-      DOM.startTimerBtn.disabled = false;
-      DOM.startTimerBtn.className = 'timer-btn primary';
-      if (DOM.resetTimerBtn) DOM.resetTimerBtn.disabled = false;
-      if (DOM.clearTimerBtn) DOM.clearTimerBtn.disabled = false;
-    } else {
-      DOM.activeTimerBadge.className = 'timer-status-badge idle';
-      DOM.activeTimerBadge.textContent = 'READY';
-      document.title = 'Bread Nerd — Interactive Bread Hydration & Baker\'s Calculator';
-      DOM.startTimerBtn.innerHTML = `${SVG_TIMER_PLAY}<span>Start</span>`;
-      DOM.startTimerBtn.disabled = true;
-      DOM.startTimerBtn.className = 'timer-btn primary';
-      if (DOM.resetTimerBtn) DOM.resetTimerBtn.disabled = true;
-      if (DOM.clearTimerBtn) DOM.clearTimerBtn.disabled = true;
-    }
-
-    saveTimerState();
-  }
-
-  function announceTimerStatus(message) {
-    const announcer = document.getElementById('timerAriaAnnouncer');
-    if (announcer) {
-      announcer.textContent = '';
-      setTimeout(() => {
-        announcer.textContent = message;
-      }, 50);
-    }
-  }
-
-  function toggleTimer() {
-    if (timerRemainingSeconds <= 0 && timerTotalSeconds > 0) {
-      clearTimer();
-    } else if (timerIsRunning) {
-      pauseTimer();
-    } else if (timerRemainingSeconds > 0) {
-      const isResume = timerTotalSeconds > timerRemainingSeconds;
-      const msg = isResume
-        ? `Timer resumed: ${formatTime(timerRemainingSeconds)} remaining`
-        : `Timer started for ${timerLabelText}: ${formatTime(timerRemainingSeconds)}`;
-      startTimer(true, msg);
-    }
-  }
-
-  function clearTimer() {
-    pauseTimer(false);
-    timerTotalSeconds = 0;
-    timerRemainingSeconds = 0;
-    timerLabelText = 'Ready';
-    timerEndTime = null;
-    updateTimerUI();
-    announceTimerStatus('Timer cleared');
-    try {
-      localStorage.removeItem(STORAGE_TIMER_KEY);
-    } catch (e) {}
-  }
-
-  function loadTimer(seconds, label) {
-    pauseTimer(false);
-    timerTotalSeconds = seconds;
-    timerRemainingSeconds = seconds;
-    timerLabelText = label;
-    timerEndTime = Date.now() + seconds * 1000;
-    updateTimerUI();
-    startTimer(false, `Timer started for ${label}: ${formatTime(seconds)}`);
-
-    // Smooth scroll to timer if on mobile screen
-    if (window.innerWidth < 1040) {
-      DOM.timerHubCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
-
-  function startTimer(resetEndTime = true, announcement = null) {
-    if (timerRemainingSeconds <= 0) return;
-    getAudioContext();
-    if (timerInterval) clearInterval(timerInterval);
-    timerIsRunning = true;
-    if (resetEndTime) {
-      timerEndTime = Date.now() + timerRemainingSeconds * 1000;
-    }
-
-    if (announcement) {
-      announceTimerStatus(announcement);
-    } else if (timerTotalSeconds > timerRemainingSeconds) {
-      announceTimerStatus(`Timer resumed: ${formatTime(timerRemainingSeconds)} remaining`);
-    } else {
-      announceTimerStatus(`Timer started for ${timerLabelText}: ${formatTime(timerRemainingSeconds)}`);
-    }
-    updateTimerUI();
-
-    timerInterval = setInterval(() => {
-      if (timerEndTime) {
-        const remaining = Math.round((timerEndTime - Date.now()) / 1000);
-        timerRemainingSeconds = Math.max(0, remaining);
-      } else {
-        timerRemainingSeconds--;
-      }
-
-      if (timerRemainingSeconds <= 0) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        timerRemainingSeconds = 0;
-        timerIsRunning = false;
-        timerEndTime = null;
-        playTimerChime();
-        updateTimerUI();
-        announceTimerStatus(`Timer finished: ${timerLabelText}!`);
-        if (window.innerWidth > 768) {
-          showToast(`🔔 Timer Finished: ${timerLabelText}!`, 'warning');
-        }
-      } else {
-        updateTimerUI();
-      }
-    }, 1000);
-  }
-
-  function pauseTimer(announce = true) {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
-    const wasRunning = timerIsRunning;
-    timerIsRunning = false;
-    timerEndTime = null;
-    updateTimerUI();
-    if (announce && wasRunning && timerRemainingSeconds > 0) {
-      announceTimerStatus(`Timer paused: ${formatTime(timerRemainingSeconds)} remaining`);
-    }
-  }
-
-  function resetTimer() {
-    pauseTimer(false);
-    timerRemainingSeconds = timerTotalSeconds;
-    timerEndTime = null;
-    updateTimerUI();
-    announceTimerStatus(`Timer reset to ${formatTime(timerTotalSeconds)}`);
-  }
-
-  function adjustTimerMinutes(mins) {
-    const deltaSecs = mins * 60;
-    if (deltaSecs < 0) {
-      if (timerRemainingSeconds <= 0) return;
-      const newSecs = Math.max(0, timerRemainingSeconds + deltaSecs);
-      timerRemainingSeconds = newSecs;
-      if (timerEndTime) {
-        timerEndTime = Date.now() + newSecs * 1000;
-      }
-      if (newSecs === 0) {
-        pauseTimer();
-        timerTotalSeconds = 0;
-        timerEndTime = null;
-        updateTimerUI();
-      } else {
-        updateTimerUI();
-      }
-    } else {
-      timerTotalSeconds += deltaSecs;
-      timerRemainingSeconds += deltaSecs;
-      if (timerEndTime) {
-        timerEndTime += deltaSecs * 1000;
-      }
-      // Only auto-start if timer was freshly empty (0:00); do NOT auto-start if already paused
-      if (!timerIsRunning && timerTotalSeconds === deltaSecs && timerRemainingSeconds > 0) {
-        if (timerLabelText === 'Select a baking step below to start' || timerLabelText === 'Ready') {
-          timerLabelText = `Custom +${mins}m`;
-        }
-        updateTimerUI();
-        startTimer(true, `Timer started for ${timerLabelText}: ${formatTime(timerRemainingSeconds)}`);
-      } else {
-        updateTimerUI();
-      }
-    }
-  }
+  const updateTimerUI = () => timerEngine && timerEngine.updateUI();
+  const toggleTimer = () => timerEngine && timerEngine.toggle();
+  const clearTimer = () => timerEngine && timerEngine.clear();
+  const loadTimer = (seconds, label) => timerEngine && timerEngine.load(seconds, label);
+  const startTimer = (resetEndTime = true, announcement = null) => timerEngine && timerEngine.start(resetEndTime, announcement);
+  const pauseTimer = (announce = true) => timerEngine && timerEngine.pause(announce);
+  const resetTimer = () => timerEngine && timerEngine.reset();
+  const adjustTimerMinutes = (mins) => timerEngine && timerEngine.adjustMinutes(mins);
 
   // --- Recipe / Kitchen View Mode ---
   const STORAGE_VIEW_MODE_KEY = 'breadNerd_recipeMode';
   const THEME_STORAGE_KEY = 'breadNerd_theme';
 
-  function applyTheme(theme) {
-    if (theme === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light');
-      if (DOM.themeToggleText) DOM.themeToggleText.textContent = 'Light';
-      if (DOM.themeToggleIcon) {
-        DOM.themeToggleIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-      }
-      if (DOM.themeToggleBtn) {
-        DOM.themeToggleBtn.setAttribute('aria-pressed', 'true');
-        DOM.themeToggleBtn.setAttribute('title', 'Switch to dark theme');
-        DOM.themeToggleBtn.setAttribute('aria-label', 'Switch to dark theme');
-      }
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      if (DOM.themeToggleText) DOM.themeToggleText.textContent = 'Dark';
-      if (DOM.themeToggleIcon) {
-        DOM.themeToggleIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-      }
-      if (DOM.themeToggleBtn) {
-        DOM.themeToggleBtn.setAttribute('aria-pressed', 'false');
-        DOM.themeToggleBtn.setAttribute('title', 'Switch to light theme');
-        DOM.themeToggleBtn.setAttribute('aria-label', 'Switch to light theme');
-      }
-    }
-
-    if (typeof document !== 'undefined') {
-      const newColor = (theme === 'light') ? '#f8fafc' : '#080b12';
-      const themeColorMetas = document.querySelectorAll('meta[name="theme-color"]');
-      themeColorMetas.forEach(meta => {
-        meta.setAttribute('content', newColor);
-      });
-    }
-  }
-
-  let systemThemeListenerInitialized = false;
-  function initSystemThemeListener() {
-    if (systemThemeListenerInitialized || typeof window === 'undefined' || !window.matchMedia) return;
-    try {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
-      const handleThemeChange = (e) => {
-        try {
-          const saved = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('bread_nerd_theme');
-          if (!saved) {
-            applyTheme(e.matches ? 'light' : 'dark');
-          }
-        } catch (err) {
-          applyTheme(e.matches ? 'light' : 'dark');
-        }
-      };
-      if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener('change', handleThemeChange);
-        systemThemeListenerInitialized = true;
-      } else if (mediaQuery.addListener) {
-        mediaQuery.addListener(handleThemeChange);
-        systemThemeListenerInitialized = true;
-      }
-    } catch (e) {}
-  }
-
-  function loadTheme() {
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem('bread_nerd_theme');
-      if (saved === 'light' || saved === 'dark') {
-        applyTheme(saved);
-      } else {
-        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-        applyTheme(prefersLight ? 'light' : 'dark');
-      }
-    } catch (e) {
-      applyTheme('dark');
-    }
-    initSystemThemeListener();
-  }
-
-  function toggleTheme() {
-    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    const newTheme = isLight ? 'dark' : 'light';
-    applyTheme(newTheme);
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    } catch (e) {}
-  }
+  const applyTheme = (theme) => themeMgr && themeMgr.applyTheme(theme);
+  const loadTheme = () => themeMgr && themeMgr.loadTheme();
+  const toggleTheme = () => themeMgr && themeMgr.toggleTheme();
 
   function toggleRecipeView(forceMode) {
     const isCurrentlyRecipe = document.body.classList.contains('recipe-mode');
@@ -1992,66 +1621,8 @@
     }
   }
 
-  function saveTimerState() {
-    try {
-      if (timerIsRunning && timerEndTime) {
-        localStorage.setItem(STORAGE_TIMER_KEY, JSON.stringify({
-          totalSeconds: timerTotalSeconds,
-          remainingSeconds: timerRemainingSeconds,
-          labelText: timerLabelText,
-          isRunning: true,
-          endTime: timerEndTime
-        }));
-      } else if (!timerIsRunning && timerTotalSeconds > 0 && timerRemainingSeconds > 0) {
-        localStorage.setItem(STORAGE_TIMER_KEY, JSON.stringify({
-          totalSeconds: timerTotalSeconds,
-          remainingSeconds: timerRemainingSeconds,
-          labelText: timerLabelText,
-          isRunning: false,
-          endTime: null
-        }));
-      } else {
-        localStorage.removeItem(STORAGE_TIMER_KEY);
-      }
-    } catch (e) {
-      console.warn('Could not save timer state', e);
-    }
-  }
-
-  function loadTimerState() {
-    try {
-      const saved = localStorage.getItem(STORAGE_TIMER_KEY);
-      if (!saved) return;
-      const parsed = JSON.parse(saved);
-      if (!parsed || typeof parsed !== 'object') return;
-
-      timerTotalSeconds = parsed.totalSeconds || 0;
-      timerLabelText = parsed.labelText || 'Timer';
-
-      if (parsed.isRunning && parsed.endTime) {
-        const now = Date.now();
-        const diffSecs = Math.round((parsed.endTime - now) / 1000);
-        if (diffSecs > 0) {
-          timerRemainingSeconds = diffSecs;
-          timerEndTime = parsed.endTime;
-          startTimer(false);
-        } else {
-          timerRemainingSeconds = 0;
-          timerIsRunning = false;
-          timerEndTime = null;
-          updateTimerUI();
-          showToast(`🔔 Timer "${timerLabelText}" finished while you were away!`, 'warning');
-        }
-      } else if (parsed.remainingSeconds > 0) {
-        timerRemainingSeconds = parsed.remainingSeconds;
-        timerIsRunning = false;
-        timerEndTime = null;
-        updateTimerUI();
-      }
-    } catch (e) {
-      console.warn('Could not load timer state', e);
-    }
-  }
+  const saveTimerState = () => timerEngine && timerEngine.saveState();
+  const loadTimerState = () => timerEngine && timerEngine.loadState();
 
   // --- Dedicated Printable Recipe Card Renderer ---
   function renderPrintRecipeCard() {
@@ -2259,72 +1830,9 @@
     `;
   }
 
-  // --- Toast System ---
-  function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    const span = document.createElement('span');
-    span.textContent = message;
-    toast.appendChild(span);
-    DOM.toastContainer.appendChild(toast);
-
-    setTimeout(() => {
-      toast.classList.add('fade-out');
-      setTimeout(() => toast.remove(), 300);
-    }, 3200);
-  }
-
-  // --- Screen Wake Lock API ---
-  async function requestWakeLock() {
-    if (!('wakeLock' in navigator) || !wakeLockWanted) return;
-    try {
-      wakeLockSentinel = await navigator.wakeLock.request('screen');
-      DOM.wakeLockBtn.classList.add('active');
-      DOM.wakeLockBtn.setAttribute('aria-pressed', 'true');
-
-      wakeLockSentinel.addEventListener('release', () => {
-        wakeLockSentinel = null;
-        if (!wakeLockWanted) {
-          DOM.wakeLockBtn.classList.remove('active');
-          DOM.wakeLockBtn.setAttribute('aria-pressed', 'false');
-        }
-      });
-    } catch (err) {
-      console.warn('Wake lock request error:', err);
-    }
-  }
-
-  async function toggleWakeLock() {
-    if (!('wakeLock' in navigator)) {
-      showToast('Screen Wake Lock is not supported on this browser', 'warning');
-      return;
-    }
-
-    try {
-      if (wakeLockWanted) {
-        wakeLockWanted = false;
-        if (wakeLockSentinel) {
-          await wakeLockSentinel.release();
-          wakeLockSentinel = null;
-        }
-        DOM.wakeLockBtn.classList.remove('active');
-        DOM.wakeLockBtn.setAttribute('aria-pressed', 'false');
-        showToast('Screen Wake Lock released', 'info');
-      } else {
-        wakeLockWanted = true;
-        await requestWakeLock();
-        if (wakeLockSentinel) {
-          DOM.wakeLockBtn.setAttribute('aria-pressed', 'true');
-          showToast('Screen will stay awake while baking!', 'success');
-        } else {
-          showToast('Could not activate Wake Lock', 'warning');
-        }
-      }
-    } catch (err) {
-      console.error('Wake lock error:', err);
-      showToast('Could not activate Wake Lock: ' + err.message, 'warning');
-    }
-  }
+  // --- Screen Wake Lock API (Delegated to KitchenCore) ---
+  const requestWakeLock = () => wakeLockMgr && wakeLockMgr.request();
+  const toggleWakeLock = () => wakeLockMgr && wakeLockMgr.toggle();
 
   // --- Copy Formula Markdown ---
   function copyFormulaToClipboard() {
@@ -2420,59 +1928,26 @@
   // --- Step Progress Checklist Persistence ---
   const STORAGE_STEP_PROGRESS_KEY = 'breadNerd_stepProgress';
 
-  function saveStepProgress() {
-    try {
-      const completedSteps = [];
-      DOM.timelineSteps.forEach(step => {
-        if (step.classList.contains('completed')) {
-          const stepNum = step.dataset.step;
-          if (stepNum) completedSteps.push(stepNum);
-        }
-      });
-      localStorage.setItem(STORAGE_STEP_PROGRESS_KEY, JSON.stringify(completedSteps));
-    } catch (e) {
-      console.warn('Could not save step progress', e);
-    }
-  }
-
-  function loadStepProgress() {
-    try {
-      const saved = localStorage.getItem(STORAGE_STEP_PROGRESS_KEY);
-      if (!saved) return;
-      const completedSteps = JSON.parse(saved);
-      if (Array.isArray(completedSteps)) {
-        DOM.timelineSteps.forEach(step => {
-          const stepNum = step.dataset.step;
-          if (stepNum && completedSteps.includes(stepNum)) {
-            step.classList.add('completed');
-          } else {
-            step.classList.remove('completed');
-          }
-        });
-      }
-    } catch (e) {
-      console.warn('Could not load step progress', e);
-    }
-  }
-
-  function resetStepProgress() {
-    try {
-      localStorage.removeItem(STORAGE_STEP_PROGRESS_KEY);
-    } catch (e) {}
-    DOM.timelineSteps.forEach(step => {
-      step.classList.remove('completed');
-    });
+  // --- Step Progress Checklist Persistence (Delegated to KitchenCore) ---
+  const saveStepProgress = () => checklistMgr && checklistMgr.save();
+  const resetStepProgress = () => {
+    if (checklistMgr) checklistMgr.reset();
     updateStepProgress();
-  }
+  };
 
   function updateStepProgress() {
     let completedCount = 0;
     DOM.timelineSteps.forEach(step => {
-      if (step.classList.contains('completed')) {
-        completedCount++;
-      }
+      if (step.classList.contains('completed')) completedCount++;
     });
-    DOM.stepsProgress.textContent = `${completedCount} / ${DOM.timelineSteps.length} Complete`;
+    if (DOM.stepsProgress) {
+      DOM.stepsProgress.textContent = `${completedCount} / ${DOM.timelineSteps.length} Complete`;
+    }
+  }
+
+  function loadStepProgress() {
+    if (checklistMgr) checklistMgr.load();
+    updateStepProgress();
   }
 
   // --- Setup Event Listeners ---

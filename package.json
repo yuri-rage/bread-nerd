@@ -1,12 +1,22 @@
 {
   "name": "bread-nerd",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "description": "Interactive Bread Hydration & Baker's Calculator",
   "private": true,
   "scripts": {
-    "test": "node tests/formula.test.js",
-    "dev": "npx wrangler dev",
-    "deploy": "npx wrangler deploy"
+    "test": "node scripts/check-selectors.js && node tests/shared.test.js && node tests/bread.test.js && node tests/pizza.test.js",
+    "check:selectors": "node scripts/check-selectors.js",
+    "test:shared": "node tests/shared.test.js",
+    "test:bread": "node tests/bread.test.js",
+    "test:pizza": "node tests/pizza.test.js",
+    "dev": "node scripts/dev.js",
+    "build": "node scripts/build.js",
+    "build:bread": "node scripts/build.js bread",
+    "build:pizza": "node scripts/build.js pizza",
+    "dev:bread": "node scripts/build.js bread && npx wrangler dev --config dist/bread/wrangler.jsonc",
+    "dev:pizza": "node scripts/build.js pizza && npx wrangler dev --config dist/pizza/wrangler.jsonc",
+    "deploy:bread": "node scripts/build.js bread && npx wrangler deploy --config dist/bread/wrangler.jsonc",
+    "deploy:pizza": "node scripts/build.js pizza && npx wrangler deploy --config dist/pizza/wrangler.jsonc"
   },
   "keywords": [
     "bread",

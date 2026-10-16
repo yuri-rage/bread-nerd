@@ -1,18 +1,7 @@
-// Bread Nerd Service Worker — Complete Offline Kitchen Baking Capability
-const CACHE_NAME = 'bread-nerd-v0.1.1';
-const ASSETS_TO_CACHE = [
-  './',
-  './styles.css',
-  './app.js',
-  './assets/favicon.svg',
-  './assets/apple-touch-icon.png',
-  './assets/icon-192.png',
-  './assets/icon-512.png',
-  './assets/icon-maskable.svg',
-  './assets/icon-maskable-192.png',
-  './assets/icon-maskable-512.png',
-  './manifest.json'
-];
+// __APP_TITLE__ Service Worker — Complete Offline Kitchen Baking Capability
+const APP_NAME = '__APP__-nerd';
+const CACHE_NAME = '__APP__-nerd-v__VERSION__';
+const ASSETS_TO_CACHE = __ASSETS__;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -25,8 +14,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
+      // Isolate cache cleanup to this app only (fixes localhost:8080 cross-app clobbering)
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys
+          .filter((key) => key.startsWith(`${APP_NAME}-`) && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
       );
     }).then(() => self.clients.claim())
   );
@@ -57,12 +49,7 @@ self.addEventListener('fetch', (event) => {
           cache.put(event.request, responseToCache);
         });
         return networkResponse;
-      }).catch(() => {
-        // Offline fallback to root ./ for navigation
-        if (event.request.mode === 'navigate') {
-          return caches.match('./');
-        }
-      });
+      }).catch(() => event.request.mode === 'navigate' ? caches.match('./') : Response.error());
     })
   );
 });

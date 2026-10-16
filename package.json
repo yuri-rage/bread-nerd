@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node scripts/check-selectors.js && node tests/shared.test.js && node tests/bread.test.js && node tests/pizza.test.js",
     "check:selectors": "node scripts/check-selectors.js",
-    "check:undef": "npx eslint@9 bread/app.js pizza/app.js shared/core.js",
+    "check:undef": "npx eslint@9 bread/app.js pizza/app.js shared/core.js shared/sw.js",
     "test:shared": "node tests/shared.test.js",
     "test:bread": "node tests/bread.test.js",
     "test:pizza": "node tests/pizza.test.js",

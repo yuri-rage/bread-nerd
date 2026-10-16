@@ -8,7 +8,11 @@ const {
   GRAIN_DEFINITIONS,
   SALT_DEFINITIONS,
   LEAVENING_DEFINITIONS,
-  KAB_DEFAULTS
+  KAB_DEFAULTS,
+  timerEngine,
+  toggleTimer,
+  loadTimer,
+  clearTimer
 } = require('../bread/app.js');
 
 console.log('🧪 Running Bread Nerd Formula Tests...\n');
@@ -375,6 +379,38 @@ test('release version matches across package.json, index.html header badge, and 
     sw.includes("event.request.mode === 'navigate'") && sw.includes("caches.match('./')"),
     'dist/bread/sw.js must restore offline navigation fallback to ./'
   );
+});
+
+// 12. Kitchen Timer User Workflow (Load, Pause, Resume, Clear)
+test('Bread timer user workflow: load, toggle (paused), toggle (running), finish, toggle (cleared)', () => {
+  clearTimer();
+  assert.strictEqual(timerEngine.getState().isRunning, false);
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 0);
+
+  // User starts a step timer (e.g. 10m autolyse = 600s)
+  loadTimer(600, 'Autolyse Rest');
+  assert.strictEqual(timerEngine.getState().isRunning, true);
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 600);
+  assert.strictEqual(timerEngine.getState().labelText, 'Autolyse Rest');
+
+  // User clicks Pause (toggleTimer)
+  toggleTimer();
+  assert.strictEqual(timerEngine.getState().isRunning, false, 'Timer should be paused after first toggle');
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 600);
+
+  // User clicks Resume (toggleTimer)
+  toggleTimer();
+  assert.strictEqual(timerEngine.getState().isRunning, true, 'Timer should be running after second toggle');
+
+  // Simulate timer finish (remainingSeconds becomes 0 while totalSeconds > 0)
+  timerEngine.load(0, 'Autolyse Done');
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 0);
+
+  // User clicks to dismiss/clear finished timer (toggleTimer)
+  toggleTimer();
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 0);
+  assert.strictEqual(timerEngine.getState().totalSeconds, 0);
+  assert.strictEqual(timerEngine.getState().isRunning, false);
 });
 
 console.log(`\n🎉 All ${passed} formula tests passed successfully!\n`);

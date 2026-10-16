@@ -2299,7 +2299,7 @@
     }
   }
 
-  // Node.js module exports for pure formula unit tests
+  // Node.js module exports for pure formula unit tests and timer integration
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       computeFormula,
@@ -2309,7 +2309,12 @@
       GRAIN_DEFINITIONS,
       SALT_DEFINITIONS,
       LEAVENING_DEFINITIONS,
-      KAB_DEFAULTS
+      KAB_DEFAULTS,
+      timerEngine,
+      toggleTimer,
+      loadTimer,
+      clearTimer,
+      resetTimer
     };
   }
 

@@ -12,7 +12,11 @@ const {
   LEAVENING_DEFINITIONS,
   SUGAR_TYPES,
   PIZZA_SIZES,
-  NY_DEFAULTS
+  NY_DEFAULTS,
+  timerEngine,
+  toggleTimer,
+  loadTimer,
+  clearTimer
 } = require('../pizza/app.js');
 
 console.log('🍕 Running Pizza Nerd Formula Tests...\n');
@@ -573,6 +577,48 @@ test('Item 4: Outdoor oven preheat temperature and bake time adapt to sugar leve
   const s9Lean = stepsLean.find(s => s.num === 9);
   assert.ok(s8Lean.title.includes('650°F–700°F'));
   assert.ok(s9Lean.title.includes('3–4 min'));
+});
+
+// 25. Undefined Variable Safety Guard
+test('Pizza timer button handlers do not reference obsolete/undefined variables (e.g. timerIsRunning)', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const code = fs.readFileSync(path.join(__dirname, '../pizza/app.js'), 'utf8');
+  assert.ok(!code.includes('timerIsRunning'), 'pizza/app.js must not reference obsolete timerIsRunning');
+  assert.ok(!code.includes('timerRemainingSeconds'), 'pizza/app.js must not reference obsolete timerRemainingSeconds');
+  assert.ok(!code.includes('timerTotalSeconds'), 'pizza/app.js must not reference obsolete timerTotalSeconds');
+});
+
+// 26. Kitchen Timer User Workflow (Load, Pause, Resume, Clear)
+test('Pizza timer user workflow: load, toggle (paused), toggle (running), finish, toggle (cleared)', () => {
+  clearTimer();
+  assert.strictEqual(timerEngine.getState().isRunning, false);
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 0);
+
+  // User starts a step timer (e.g. 20m bench rest = 1200s)
+  loadTimer(1200, 'Bench Rest');
+  assert.strictEqual(timerEngine.getState().isRunning, true);
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 1200);
+  assert.strictEqual(timerEngine.getState().labelText, 'Bench Rest');
+
+  // User clicks Pause on timer card or mobile pill (toggleTimer)
+  toggleTimer();
+  assert.strictEqual(timerEngine.getState().isRunning, false, 'Timer should be paused after first toggle');
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 1200);
+
+  // User clicks Resume (toggleTimer)
+  toggleTimer();
+  assert.strictEqual(timerEngine.getState().isRunning, true, 'Timer should be running after second toggle');
+
+  // Simulate timer finish (remainingSeconds becomes 0 while totalSeconds > 0)
+  timerEngine.load(0, 'Rest Complete');
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 0);
+
+  // User clicks to dismiss/clear finished timer (toggleTimer)
+  toggleTimer();
+  assert.strictEqual(timerEngine.getState().remainingSeconds, 0);
+  assert.strictEqual(timerEngine.getState().totalSeconds, 0);
+  assert.strictEqual(timerEngine.getState().isRunning, false);
 });
 
 console.log(`\n🎉 All ${passed} formula tests passed successfully!\n`);

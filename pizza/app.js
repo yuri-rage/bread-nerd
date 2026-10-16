@@ -2390,12 +2390,7 @@
     }
 
     // Timer Hub Controls
-    if (DOM.startTimerBtn) {
-      DOM.startTimerBtn.addEventListener('click', () => {
-        if (timerIsRunning) pauseTimer();
-        else startTimer();
-      });
-    }
+    if (DOM.startTimerBtn) DOM.startTimerBtn.addEventListener('click', toggleTimer);
     if (DOM.resetTimerBtn) DOM.resetTimerBtn.addEventListener('click', resetTimer);
     if (DOM.clearTimerBtn) DOM.clearTimerBtn.addEventListener('click', clearTimer);
     if (DOM.quickTimerChips) {
@@ -2417,13 +2412,7 @@
     if (DOM.mobileTimerToggleBtn) {
       DOM.mobileTimerToggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (timerRemainingSeconds <= 0 && timerTotalSeconds > 0) {
-          clearTimer();
-        } else if (timerIsRunning) {
-          pauseTimer();
-        } else {
-          startTimer();
-        }
+        toggleTimer();
       });
     }
 
@@ -2562,7 +2551,7 @@
     }
   }
 
-  // Node.js module exports for pure formula unit tests
+  // Node.js module exports for pure formula unit tests and timer integration
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       computeFormula,
@@ -2577,7 +2566,12 @@
       SUGAR_TYPES,
       PIZZA_SIZES,
       NY_DEFAULTS,
-      getGrainPresetLabel
+      getGrainPresetLabel,
+      timerEngine,
+      toggleTimer,
+      loadTimer,
+      clearTimer,
+      resetTimer
     };
   }
 
